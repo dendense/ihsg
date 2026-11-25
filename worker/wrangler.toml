@@ -22,7 +22,7 @@ OWN_DAILY_WRITE_BUDGET = "60000"
 [[d1_databases]]
 binding = "DB"
 database_name = "ihsg"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "ae866f3f-37e1-4467-9642-6f88e709a3e2"
 migrations_dir = "migrations"
 
 # The minute cron (src/cron.js): the board refresh (every minute during IDX
