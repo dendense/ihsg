@@ -30,7 +30,8 @@ export type MinuteBar = { mins: number; close: number }
 const stamp = (dayUtc: number, mins: number) => (dayUtc + mins * 60) as UTCTimestamp
 const minsOf = (t: number, dayUtc: number) => (t - dayUtc) / 60
 
-type Frame = { plotW: number; scaleW: number; paneH: number; x0: number; x1: number }
+/** x0 / right: the day's span inside the chart, as insets from its left and right edges */
+type Frame = { plotW: number; scaleW: number; paneH: number; x0: number; x1: number; right: number }
 
 export function SessionChart({
   bars,
@@ -58,7 +59,7 @@ export function SessionChart({
   // two area series, one per trading session, so the lunch break is a real gap
   const api = React.useRef<{ chart: IChartApi; area: ISeriesApi<"Area">; pm: ISeriesApi<"Area">; prev: IPriceLine | null; last: IPriceLine | null } | null>(null)
   const remeasure = React.useRef<() => void>(() => {})
-  const [frame, setFrame] = React.useState<Frame>({ plotW: 0, scaleW: 0, paneH: 0, x0: 0, x1: 0 })
+  const [frame, setFrame] = React.useState<Frame>({ plotW: 0, scaleW: 0, paneH: 0, x0: 0, x1: 0, right: 0 })
   const [active, setActive] = React.useState<number | null>(null)
   const [endDot, setEndDot] = React.useState<{ x: number; y: number } | null>(null)
   const themeVersion = useThemeVersion()
@@ -111,7 +112,7 @@ export function SessionChart({
         const scaleW = chart.priceScale("right").width()
         const x0 = ts.timeToCoordinate(stamp(dayUtc, DAY_START)) ?? 0
         const x1 = ts.timeToCoordinate(stamp(dayUtc, DAY_END)) ?? el.clientWidth - scaleW
-        setFrame({ plotW: el.clientWidth - scaleW, scaleW, paneH: chart.paneSize().height, x0, x1 })
+        setFrame({ plotW: el.clientWidth - scaleW, scaleW, paneH: chart.paneSize().height, x0, x1, right: Math.max(0, el.clientWidth - x1) })
         const rows = shownRef.current
         const lastBar = rows[rows.length - 1]
         if (!lastBar) return setEndDot(null)
@@ -238,7 +239,7 @@ export function SessionChart({
     : "Belum ada data per menit untuk sesi ini."
 
   return (
-    <div className={cn("grid gap-3", className)}>
+    <div className={cn("grid min-w-0 gap-3", className)}>
       <div
         role="group"
         aria-roledescription="grafik"
@@ -304,7 +305,7 @@ function SessionLine({ dow, nowMins, frame }: { dow: number; nowMins: number | n
       className="relative"
       role="group"
       aria-label="Jadwal sesi perdagangan hari ini"
-      style={width ? { marginLeft: frame.x0, width } : { marginRight: 60 }}
+      style={width ? { marginLeft: frame.x0, marginRight: frame.right } : { marginRight: 60 }}
     >
       <div className="relative flex h-9 overflow-hidden rounded-full bg-muted ring-1 ring-inset ring-border/60">
         {phases.map((p) => {
