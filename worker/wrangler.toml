@@ -1,0 +1,36 @@
+name = "ihsg-api"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+
+# Served at https://ihsg-api.<your-subdomain>.workers.dev (Workers Free plan).
+workers_dev = true
+preview_urls = false
+
+[vars]
+# Origins allowed to read /api/* from the browser (comma separated).
+ALLOWED_ORIGINS = "https://dendense.github.io,http://localhost:5173,http://localhost:4173"
+# Optional host lock, comma separated. Empty = answer on any host.
+PUBLIC_HOST = ""
+# KSEI register mirror published by fzn0x/idx (.github/workflows/ownership.yml there).
+OWN_MIRROR_URL = "https://github.com/fzn0x/idx/releases/download/ownership-data"
+OWN_KEEP_RELEASES = "6"
+# D1 free tier: 100k rows written per UTC day; the register takes ~22k per month
+# loaded, and ~43k to replace a month D1 already holds (the delete counts too).
+OWN_DAILY_WRITE_BUDGET = "60000"
+
+# Create it once with `npx wrangler d1 create ihsg`, then paste the id here.
+[[d1_databases]]
+binding = "DB"
+database_name = "ihsg"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# The minute cron (src/cron.js): the board refresh (every minute during IDX
+# trading hours, WIB, every 15 minutes otherwise), a step of the KSEI register
+# sync and one of the bandar scan, inside one subrequest budget (< 50, the Free
+# plan limit, see src/budget.js).
+[triggers]
+crons = ["* * * * *"]
+
+[observability]
+enabled = true

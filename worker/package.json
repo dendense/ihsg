@@ -1,0 +1,15 @@
+{
+  "name": "ihsg-api",
+  "private": true,
+  "description": "Cloudflare Worker serving /api/* for the IHSG dashboard (adapted from fzn0x/idx web/, MIT).",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "migrate:local": "wrangler d1 migrations apply ihsg --local",
+    "migrate:remote": "wrangler d1 migrations apply ihsg --remote",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.147.0"
+  }
+}
