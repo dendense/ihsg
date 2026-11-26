@@ -84,6 +84,7 @@ const ERROR_COPY: Record<string, string> = {
   provider: "Sumber data sedang tidak menjawab.",
   blocked: "Sumber data menolak permintaan untuk sementara.",
   not_found: "Data tidak ditemukan.",
+  source_unavailable: "Sumber data ini sudah dihentikan oleh penyedianya.",
   usage: "Permintaan tidak valid.",
 }
 

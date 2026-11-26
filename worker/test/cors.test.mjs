@@ -38,3 +38,26 @@ test("non-API paths are 404, host lock applies when set", async () => {
   const locked = { ...env, PUBLIC_HOST: "api.example.com" };
   assert.equal((await worker.fetch(req("/api/holidays", null), locked)).status, 404);
 });
+
+test("IPOT endpoints answer source_unavailable when IPOT is disabled, without fetching", async () => {
+  const off = { ...env, IPOT_ENABLED: "false" };
+  const orig = globalThis.fetch;
+  let fetched = 0;
+  globalThis.fetch = async () => { fetched++; throw new Error("no network in tests"); };
+  try {
+    for (const p of ["/api/bandar?symbol=BBCA", "/api/foreign?symbol=BBCA", "/api/market/brokers"]) {
+      const r = await worker.fetch(req(p, "https://dendense.github.io"), off);
+      assert.equal(r.status, 503);
+      assert.equal(r.headers.get("access-control-allow-origin"), "https://dendense.github.io");
+      assert.equal((await r.json()).error.code, "source_unavailable");
+    }
+    assert.equal(fetched, 0);
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test("other endpoints are untouched by the IPOT switch", async () => {
+  const r = await worker.fetch(req("/api/holidays?year=2026", null), { ...env, IPOT_ENABLED: "false" });
+  assert.equal(r.status, 200);
+});

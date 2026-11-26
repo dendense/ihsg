@@ -17,6 +17,7 @@ import { ownershipSync } from "./ownership-sync.js";
 import { bandarScanStep } from "./bandar-scan.js";
 import { runCron } from "./cron.js";
 import { SECURITY_HEADERS } from "./headers.js";
+import { IPOT_PATHS, IPOT_UNAVAILABLE, ipotEnabled } from "./ipot-gate.js";
 
 const list = (s) => String(s || "").split(",").map((v) => v.trim()).filter(Boolean);
 
@@ -84,6 +85,10 @@ export default {
         if (url.searchParams.get("what") === "bandar") return json(await bandarScanStep(env, { force: true }), 200, cors);
         return json(await refreshSnapshot(env, { force: true }), 200, cors);
       } catch (e) { return errorResponse(e, cors); }
+    }
+    // A retired source answers at once, without a single subrequest.
+    if (!ipotEnabled(env) && IPOT_PATHS.has(url.pathname.slice(4))) {
+      return json({ error: IPOT_UNAVAILABLE, exit_code: 3 }, 503, { "cache-control": "public, max-age=300", ...cors });
     }
     try {
       const env_ = await route(env, url);

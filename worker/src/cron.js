@@ -11,6 +11,7 @@ import { refreshSnapshot, marketIsOpen } from "./api.js";
 import { ownershipSync } from "./ownership-sync.js";
 import { bandarScanStep } from "./bandar-scan.js";
 import { budget, CRON_SUBREQUESTS } from "./budget.js";
+import { ipotEnabled } from "./ipot-gate.js";
 
 /** A register step that loaded or deleted part of a month: the D1 work of a whole minute. */
 const ownershipWrote = (r) => r != null && (r.part != null || r.committed != null || r.pruned != null);
@@ -40,7 +41,11 @@ export async function runCron(env, { now = new Date(), fetchFn, limit = CRON_SUB
   // minute and the budget alone decides.
   const refreshed = snapshot.status === "fulfilled" && !snapshot.value.skipped;
   const stocks = !(ownership.status === "fulfilled" && ownershipWrote(ownership.value)) && (!refreshed || marketIsOpen(now));
-  const bandar = await settle(bandarScanStep(cenv, { now, budget: b, stocks }));
+  // IPOT_ENABLED = "false" (wrangler.toml): IPOT retired its public pages, so the
+  // scan would only spend subrequests on 502s.
+  const bandar = ipotEnabled(env)
+    ? await settle(bandarScanStep(cenv, { now, budget: b, stocks }))
+    : { status: "fulfilled", value: { idle: true, skipped: "ipot disabled" } };
   if (bandar.status === "rejected") console.error("bandar scan failed", bandar.reason);
   else if (!bandar.value.idle) console.log("bandar", JSON.stringify({ ...bandar.value, subrequests: b.counts() }));
   const failed = [["snapshot", snapshot], ["ownership sync", ownership], ["bandar scan", bandar]].filter(([, r]) => r.status === "rejected");

@@ -436,6 +436,10 @@ function BandarView({ symbol }: { symbol: string }) {
   const fo = foreign.data?.data
   const sig = b ? (SIGNAL[b.signal] ?? SIGNAL.neutral) : null
 
+  // The source itself is gone (not a passing outage): say so once, calmly, with no retry.
+  const retired = (e: Error | null) => (e as { code?: string } | null)?.code === "source_unavailable"
+  if (retired(bandar.error) && retired(foreign.error)) return <SourceRetired symbol={symbol} />
+
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <Panel aria-labelledby="bd-h" className="grid content-start gap-5">
@@ -501,5 +505,27 @@ function BandarView({ symbol }: { symbol: string }) {
         )}
       </Panel>
     </div>
+  )
+}
+
+/** Broker summary and foreign flow have no source while IPOT's public pages are retired. */
+function SourceRetired({ symbol }: { symbol: string }) {
+  return (
+    <Panel aria-labelledby="sr-h" className="grid justify-items-start gap-4 p-6 sm:p-8">
+      <Badge variant="secondary" className="gap-1.5">
+        <StatusDot tone="muted" />
+        Sumber data dihentikan
+      </Badge>
+      <div className="grid max-w-[62ch] gap-2">
+        <h2 id="sr-h" className="text-[22px] font-bold tracking-[-0.02em]">
+          Ringkasan broker dan arus asing {symbol} belum tersedia
+        </h2>
+        <p className="text-[15px] leading-relaxed text-muted-foreground">
+          Data ini dulu dibaca dari halaman publik IPOT (Indo Premier). Sejak akhir November 2026 IPOT menutup halaman tersebut, dan aplikasi barunya hanya
+          menampilkan data broker kepada pengguna yang login. Belum ada sumber gratis tanpa akun yang bisa menggantikannya.
+        </p>
+      </div>
+      <p className="text-[13px] text-muted-foreground">Harga, grafik, dan fundamental di tab lain tetap diperbarui seperti biasa.</p>
+    </Panel>
   )
 }

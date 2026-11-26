@@ -78,5 +78,5 @@ cd app && npm run typecheck
 ## Catatan data
 
 - Harga tertunda sesuai yang diterbitkan sumbernya. Ini bukan saran investasi.
-- Ringkasan broker (bandar) dan arus asing dibaca dari IPOT. Kalau IPOT menolak atau sedang gangguan, panelnya menampilkan pesan error dengan tombol coba lagi.
+- Ringkasan broker (bandar) dan arus asing dulu dibaca dari halaman publik IPOT. Sejak akhir November 2026 IPOT menutup halaman itu (502), jadi `IPOT_ENABLED = "false"` di `worker/wrangler.toml`: endpoint-nya langsung menjawab `source_unavailable` tanpa memanggil IPOT, scan bandar di cron dilewati, dan tab Bandar & asing menjelaskan bahwa sumbernya dihentikan. Ubah ke `"true"` kalau IPOT membuka datanya lagi.
 - Data idx.co.id (arus asing dalam lembar saham, kalender) menolak permintaan dari Cloudflare Workers, jadi hanya tersedia lewat CLI `idx`.

@@ -9,6 +9,9 @@ preview_urls = false
 [vars]
 # Origins allowed to read /api/* from the browser (comma separated).
 ALLOWED_ORIGINS = "https://dendense.github.io,http://localhost:5173,http://localhost:4173"
+# IPOT retired its public broker-summary pages (502 since Nov 2026): "false"
+# answers its endpoints with source_unavailable and skips the cron's bandar scan.
+IPOT_ENABLED = "false"
 # Optional host lock, comma separated. Empty = answer on any host.
 PUBLIC_HOST = ""
 # KSEI register mirror published by fzn0x/idx (.github/workflows/ownership.yml there).

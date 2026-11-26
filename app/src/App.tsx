@@ -80,7 +80,7 @@ export function App() {
 
       <footer className="mt-10 flex flex-col gap-2 border-t border-border/70 pt-5 text-[13px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>
-          Data tertunda sesuai sumber: Yahoo Finance, MSN, IPOT. Bukan saran investasi.
+          Data tertunda sesuai sumber: Yahoo Finance dan MSN. Bukan saran investasi.
         </p>
         <p>
           Mesin data dari{" "}
