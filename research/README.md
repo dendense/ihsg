@@ -1,20 +1,25 @@
-# Riset: scalping dan swing saham tambang & energi
+# Riset: scalping dan swing saham BEI
 
-Skrip untuk menguji, secara historis, apakah aturan screener sederhana memberi keunggulan pada 36 saham tambang dan energi di BEI. **Ini riset, bukan rekomendasi atau saran investasi.** Hasil masa lalu tidak menjamin hasil berikutnya.
+Skrip untuk menguji, secara historis, apakah aturan screener sederhana memberi keunggulan pada saham BEI: 36 saham tambang & energi, 48 saham perbankan, 150 saham terlikuid, dan seluruh semesta (point-in-time). **Ini riset, bukan rekomendasi atau saran investasi.** Hasil masa lalu tidak menjamin hasil berikutnya.
 
 ## Menjalankan
 
 Butuh Node 18+ dan Worker `ihsg-api` (lokal dengan `wrangler dev`, atau yang sudah di-deploy).
 
-```bash
-# 1. ambil data: 2 tahun harian (lewat ihsg-api) + 60 hari bar 5 menit (Yahoo chart)
-node research/fetch.mjs
+Jalankan dari root repo (`ihsg/`).
 
-# 2. studi
-node research/intraday-screener.mjs   # beli saat buka, jual di tutup sesi 1 / sesi 2 / TP
-node research/swing.mjs               # tahan 3 / 5 / 10 hari
-node research/orb-backtest.mjs        # breakout rentang pembukaan, bar 5 menit 1 bulan
-node research/scalp-stats.mjs         # likuiditas, ATR, biaya 1 tick per saham
+```bash
+# 1. ambil data: 2 tahun harian (lewat ihsg-api) + 60 hari bar 5 menit (Yahoo chart), 190 saham
+node research/fetch.mjs
+# 1b. untuk uji point-in-time: 2 tahun harian seluruh ~950 saham
+node research/fetch-all-daily.mjs
+
+# 2. studi (nama kelompok opsional: tambang_energi, perbankan, likuid_150)
+node research/intraday-screener.mjs [kelompok]   # beli saat buka, jual di tutup sesi 1 / sesi 2 / TP 1%
+node research/swing.mjs [kelompok]               # tahan 3 / 5 / 10 hari
+node research/swing-pit.mjs                      # swing, semesta 150 terlikuid per hari (point-in-time)
+node research/orb-backtest.mjs                   # breakout rentang pembukaan, bar 5 menit 1 bulan
+node research/scalp-stats.mjs                    # likuiditas, ATR, biaya 1 tick per saham
 ```
 
 Pengaturan lewat environment:
@@ -29,6 +34,13 @@ Pengaturan lewat environment:
 - Harga dibulatkan ke fraksi harga (tick) BEI: <200: 1, 200–<500: 2, 500–<2.000: 5, 2.000–<5.000: 10, ≥5.000: 25.
 - Aturan ditetapkan sebelum melihat hasil, dan data dibagi menjadi periode latih dan uji (`SPLIT = 2026-04-01`). Uji yang dibuat setelah melihat hasil ditandai **post-hoc**.
 - Statistik utama dihitung **per hari sinyal**: semua transaksi di hari yang sama dirata-rata menjadi satu observasi, karena saham satu sektor bergerak bersama.
+
+## Kelompok saham
+
+- `tambang_energi`: 36 saham batu bara, logam, minyak & gas, gas, energi terbarukan.
+- `perbankan`: 48 saham bank di semesta ihsg. Hanya 25 yang lolos filter likuiditas.
+- `likuid_150`: 150 saham dengan nilai transaksi rata-rata 3 bulan terbesar per 27 Nov 2026 (`broad.json`). **Daftar ini dipilih dengan pengetahuan masa kini**, sehingga condong ke saham yang belakangan ramai. Lihat uji point-in-time di bawah.
+- **Trending** didefinisikan per hari, hanya dengan data sampai hari itu: nilai transaksi 20 hari ≥ 2× rata-rata 120 hari. Aturan S7/S8 (swing) dan R8/R9 (day-trade) memakai definisi ini.
 
 ## Temuan (data hingga 26 Nov 2026)
 
@@ -69,6 +81,29 @@ Beli di penutupan hari setelah sinyal dan jual di penutupan N hari kemudian, den
 Hasilnya mengikuti arah sektor: naik di periode latih, turun di periode uji. Dibanding pembanding di hari yang sama, tidak ada aturan yang unggul di kedua periode.
 
 **Post-hoc, filter kondisi sektor:** hanya masuk ketika ≥ 50% dari 36 saham berada di atas MA50 masing-masing. Filter ini mengurangi transaksi saat sektor melemah (56 dari 161 hari uji) dan memperkecil rugi pembanding di periode uji dari −1,30% menjadi −0,66%, tapi hasilnya belum positif. Yang terbaik, breakout + volume dengan ambang 60%, menghasilkan +0,20% dari 29 hari, tidak signifikan.
+
+### 4. Diperluas ke perbankan, saham terlikuid, dan trending
+
+**Day-trade** (`intraday-screener.mjs`), dihitung per hari: semua aturan negatif di ketiga kelompok, termasuk R8/R9 trending. Pembanding "semua saham" −1,0% s/d −1,5% per hari, baik keluar di tutup sesi 1, tutup sesi 2, maupun TP 1%.
+
+**Swing tahan 5 hari** (`swing.mjs`, per hari, setelah fee):
+
+| Kelompok | Pembanding latih / uji | Catatan |
+|---|---|---|
+| Tambang & energi | +0,79% / −1,30% | Trending (S7) unggul +1,16% di latih tapi kalah −2,20% di uji |
+| Perbankan | −0,74% / −1,25% | Turun di kedua periode. Tidak ada aturan yang unggul konsisten |
+| 150 terlikuid (daftar masa kini) | +0,66% / −0,98% | Breakout + volume (S3) unggul +2,01% (t=3,7) / +1,97% (t=2,4). **Ternyata bias, lihat di bawah** |
+
+**Uji point-in-time** (`swing-pit.mjs`): setiap hari, semesta = 150 saham dengan nilai transaksi 60 hari terbesar **pada hari itu**, dari ~911 saham.
+
+| Aturan (selisih vs pembanding) | Latih | Uji | Uji, tanpa tumpang tindih |
+|---|---:|---:|---:|
+| S3 breakout + volume | +1,71% (t=3,5) | +0,21% (t=0,4) | 0,00% |
+| S5 momentum relatif | +1,45% (t=5,4) | −0,35% | −0,39% |
+| S7 trending | +0,47% | −0,53% | −0,51% |
+| S8 trending + naik | +0,90% | −0,42% | +0,23% (t=0,2) |
+
+Keunggulan S3 di daftar "150 terlikuid masa kini" hilang ketika semestanya point-in-time. Saham yang sekarang ramai sering kali justru yang baru saja breakout, jadi memilihnya berdasarkan likuiditas masa kini sama dengan mengintip hasil. Aturan momentum dan trending hanya unggul di periode latih, saat pasar sedang naik.
 
 ## Batasan
 

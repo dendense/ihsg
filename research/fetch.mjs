@@ -1,10 +1,10 @@
 // Pull 2y daily (via local ihsg-api) and 60d 5m bars (Yahoo chart) for the mining/energy list.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { API, DATA, MINING_ENERGY } from "./config.mjs";
+import { API, DATA, ALL } from "./config.mjs";
 const out = process.argv[2] ?? DATA;
 mkdirSync(dirname(out), { recursive: true });
-const SYMS = MINING_ENERGY;
+const SYMS = ALL;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const daily = {}, intra = {};
 for (const s of SYMS) {
