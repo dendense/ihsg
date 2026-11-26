@@ -33,6 +33,10 @@ export const RULES = {
   // "trending": trading value of the last 20 days at least twice its 120-day average, known that day
   S7_trending: (f) => f.valR >= 2,
   S8_trending_naik: (f) => f.valR >= 2 && f.c > f.ma20 && f.r20 > 0,
+  // MA10 crossing above MA20: the exact event (yesterday at or below, today above), and the
+  // snapshot a Stockbit screener can express without yesterday's values (see ma-cross.mjs)
+  S9_ma10_potong_ma20: (f) => f.ma10p <= f.ma20p && f.ma10 > f.ma20,
+  S10_ma10_ma20_stockbit: (f) => f.ma10 > f.ma20 && f.ma10 <= f.ma20 * 1.02 && f.c > f.ma10,
 };
 
 const st = (xs) => {
@@ -73,8 +77,8 @@ export function study(name, daily, { eligible = () => true, every = 1 } = {}) {
       const v20 = mean(b.slice(t - 20, t).map((y) => y.v));
       const r20 = x.c / b[t - 20].c - 1;
       const f = {
-        c: x.c, ma5: ma(t, 5), ma20: ma(t, 20), ma50: ma(t, 50), ma100: ma(t, 100),
-        ma5p: ma(t - 1, 5), ma20p: ma(t - 1, 20), rsi14: rsi(cl, t, 14), rsi2: rsi(cl, t, 2),
+        c: x.c, ma5: ma(t, 5), ma10: ma(t, 10), ma20: ma(t, 20), ma50: ma(t, 50), ma100: ma(t, 100),
+        ma5p: ma(t - 1, 5), ma10p: ma(t - 1, 10), ma20p: ma(t - 1, 20), rsi14: rsi(cl, t, 14), rsi2: rsi(cl, t, 2),
         hi20: Math.max(...b.slice(t - 20, t).map((y) => y.h)), volR: v20 ? x.v / v20 : 0,
         r20, r20p: pctile(x.d, r20), valR: val120 ? val20 / val120 : 0,
       };

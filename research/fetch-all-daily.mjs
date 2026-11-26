@@ -3,10 +3,11 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { API } from "./config.mjs";
+import { API, requireApi } from "./config.mjs";
 const here = dirname(fileURLToPath(import.meta.url));
 const universe = (await import(join(here, "..", "worker", "src", "universe.json"), { with: { type: "json" } })).default.map((x) => x[0]);
 const out = process.argv[2] ?? join(here, "data", "all-daily.json");
+await requireApi();
 mkdirSync(dirname(out), { recursive: true });
 const daily = {};
 let failed = 0;
@@ -18,6 +19,10 @@ for (let i = 0; i < universe.length; i += 6) {
       daily[s] = j.data.candles.filter((c) => c.open && c.close).map((c) => ({ d: c.time.slice(0, 10), o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume ?? 0 }));
     } catch { failed++; }
   }));
+}
+if (Object.keys(daily).length < universe.length / 2) {
+  console.error(`Hanya ${Object.keys(daily).length} dari ${universe.length} saham berhasil. File ${out} tidak diubah.`);
+  process.exit(1);
 }
 writeFileSync(out, JSON.stringify({ daily }));
 console.log(`${Object.keys(daily).length} saham tersimpan, ${failed} gagal -> ${out}`);

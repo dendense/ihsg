@@ -20,11 +20,12 @@ node research/swing.mjs [kelompok]               # tahan 3 / 5 / 10 hari
 node research/swing-pit.mjs                      # swing, semesta 150 terlikuid per hari (point-in-time)
 node research/orb-backtest.mjs                   # breakout rentang pembukaan, bar 5 menit 1 bulan
 node research/scalp-stats.mjs                    # likuiditas, ATR, biaya 1 tick per saham
+node research/ma-cross.mjs                       # MA10 memotong MA20: daftar hari terakhir + ketepatan rumus Stockbit
 ```
 
 Pengaturan lewat environment:
 
-- `IHSG_API` alamat API, bawaan `http://localhost:8790/api`. Untuk Worker live: `IHSG_API=https://ihsg-api.denyfarras.workers.dev/api`.
+- `IHSG_API` alamat API, bawaan `http://localhost:8790/api`. Untuk Worker live: `IHSG_API=https://ihsg-api.denyfarras.workers.dev/api`. Kalau API tidak bisa dihubungi, atau kurang dari separuh saham berhasil diambil, skrip berhenti tanpa mengubah file data.
 - `IHSG_DATA` lokasi file data, bawaan `research/data/data.json` (di-gitignore).
 
 ## Asumsi yang sama di semua studi
@@ -104,6 +105,13 @@ Hasilnya mengikuti arah sektor: naik di periode latih, turun di periode uji. Dib
 | S8 trending + naik | +0,90% | −0,42% | +0,23% (t=0,2) |
 
 Keunggulan S3 di daftar "150 terlikuid masa kini" hilang ketika semestanya point-in-time. Saham yang sekarang ramai sering kali justru yang baru saja breakout, jadi memilihnya berdasarkan likuiditas masa kini sama dengan mengintip hasil. Aturan momentum dan trending hanya unggul di periode latih, saat pasar sedang naik.
+
+### 5. MA10 memotong ke atas MA20 (`swing.mjs` S9/S10, `ma-cross.mjs`)
+
+Screener Stockbit hanya membandingkan nilai hari ini, tanpa MA kemarin. Karena itu cross didekati dengan snapshot: `Price MA 10 > Price MA 20`, `Price MA 10 ≤ 1.02 × Price MA 20`, `Price > Price MA 10`.
+
+- Ketepatan snapshot (2 tahun, saham likuid): 21% baru cross hari itu, 44% dalam 3 hari, 53% dalam 5 hari. 74% dari cross yang sebenarnya tertangkap di harinya.
+- Swing tahan 5 hari, semesta point-in-time, selisih vs pembanding: cross tepat (S9) +0,33% latih / −0,42% uji, snapshot Stockbit (S10) +0,24% / −0,21%. Tanpa tumpang tindih, S9 −2,52% di uji (t=−2,5). Tidak ada keunggulan.
 
 ## Batasan
 

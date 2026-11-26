@@ -4,6 +4,20 @@ import { fileURLToPath } from "node:url";
 
 /** The ihsg-api to read history from: the local `wrangler dev` (default) or the deployed Worker. */
 export const API = (process.env.IHSG_API ?? "http://localhost:8790/api").replace(/\/$/, "");
+export const LIVE_API = "https://ihsg-api.denyfarras.workers.dev/api";
+
+/** Stops a fetch script before it starts when the API cannot be reached, so no data file is overwritten. */
+export async function requireApi() {
+  try {
+    const r = await fetch(`${API}/history?symbol=BBCA&period=5d&interval=1d`, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  } catch (e) {
+    console.error(`API ${API} tidak bisa dihubungi (${e.cause?.code ?? e.message}). File data tidak diubah.`);
+    console.error(`Jalankan Worker lokal (cd worker && npm run dev -- --port 8790), atau pakai Worker live:`);
+    console.error(`  IHSG_API=${LIVE_API} node research/${process.argv[1].split("/").at(-1)}`);
+    process.exit(1);
+  }
+}
 /** Where fetch.mjs writes and the studies read the price data (gitignored). */
 export const DATA = process.env.IHSG_DATA ?? join(dirname(fileURLToPath(import.meta.url)), "data", "data.json");
 

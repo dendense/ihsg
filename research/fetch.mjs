@@ -1,8 +1,9 @@
 // Pull 2y daily (via local ihsg-api) and 60d 5m bars (Yahoo chart) for the mining/energy list.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { API, DATA, ALL } from "./config.mjs";
+import { API, DATA, ALL, requireApi } from "./config.mjs";
 const out = process.argv[2] ?? DATA;
+await requireApi();
 mkdirSync(dirname(out), { recursive: true });
 const SYMS = ALL;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -21,6 +22,11 @@ for (const s of SYMS) {
     }).filter((b) => b.o != null && b.c != null);
   } catch (e) { intra[s] = { err: String(e) }; }
   await sleep(400);
+}
+const ok = SYMS.filter((s) => Array.isArray(daily[s])).length;
+if (ok < SYMS.length / 2) {
+  console.error(`Hanya ${ok} dari ${SYMS.length} saham berhasil. File ${out} tidak diubah.`);
+  process.exit(1);
 }
 writeFileSync(out, JSON.stringify({ daily, intra }));
 console.log(SYMS.map((s) => `${s}:${daily[s].length ?? "E"}/${intra[s].length ?? "E"}`).join(" "));
